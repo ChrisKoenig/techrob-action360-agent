@@ -2,6 +2,7 @@
 
 import logging
 import os
+from pathlib import Path
 from typing import Optional, AsyncGenerator
 from azure.identity.aio import DefaultAzureCredential
 from agent_framework.azure import AzureAIClient
@@ -42,6 +43,39 @@ class TechRobAgent:
         self.agent_name = agent_name
         self.enable_mcp = enable_mcp
         
+        # Load instructions from file if not provided
+        if instructions:
+            self.instructions = instructions
+        else:
+            self.instructions = self._load_instructions()
+        
+        self.credential = None
+        self.client = None
+        self.agent = None
+        self.mcp_tools = []
+        
+        logger.info(f"TechRobAgent initialized (name={agent_name}, endpoint={self.project_endpoint}, ADO org={self.ado_org_name})")
+    
+    def _load_instructions(self) -> str:
+        """
+        Load instructions from config/instructions.md file.
+        Falls back to default instructions if file not found.
+        
+        Returns:
+            Instructions string for the agent
+        """
+        instructions_path = Path(__file__).parent.parent / "config" / "instructions.md"
+        
+        if instructions_path.exists():
+            try:
+                with open(instructions_path, 'r', encoding='utf-8') as f:
+                    instructions = f.read()
+                logger.info(f"Loaded instructions from {instructions_path}")
+                return instructions
+            except Exception as e:
+                logger.warning(f"Failed to load instructions from file: {e}, using default")
+        
+        # Fallback to default instructions
         default_instructions = f"""You are TechRob Action360, a helpful AI assistant with access to Azure DevOps tools.
 You work with the Azure DevOps organization '{self.ado_org_name}' and the project '{self.ado_project_name}'.
 You can help users manage work items, pull requests, pipelines, and team capacity.
@@ -54,14 +88,7 @@ You have access to Azure DevOps via the MCP server, which provides tools for:
 
 Always provide clear, accurate, and concise responses.
 When users ask about Azure DevOps data, use the appropriate tools to fetch real data from the '{self.ado_project_name}' project."""
-        
-        self.instructions = instructions or default_instructions
-        self.credential = None
-        self.client = None
-        self.agent = None
-        self.mcp_tools = []
-        
-        logger.info(f"TechRobAgent initialized (name={agent_name}, endpoint={self.project_endpoint}, ADO org={self.ado_org_name})")
+        return default_instructions
     
     def _create_mcp_tools(self) -> list:
         """
