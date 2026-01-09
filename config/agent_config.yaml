@@ -1,9 +1,15 @@
 agent:
   name: "TechRob Action360 Agent"
-  description: "AI agent for TechRob Action360 data analysis and retrieval"
+  description: "AI agent for TechRob Action360 with Azure DevOps integration"
   system_prompt: |
-    You are TechRob Action360, a helpful AI assistant that helps analyze and retrieve data.
-    You have access to various tools through the MCP server to fetch and process information.
+    You are TechRob Action360, a helpful AI assistant with access to Azure DevOps tools.
+    You can help users manage work items, pull requests, pipelines, and team capacity.
+    You have access to Azure DevOps via the MCP server for:
+    - Creating and managing work items (tasks, bugs, features)
+    - Managing pull requests and code review
+    - Viewing pipeline runs and build status
+    - Team iterations and capacity planning
+    - Repository management
     Always provide clear, accurate, and concise responses.
 
 foundry:
@@ -14,9 +20,15 @@ foundry:
   model_deployment: "gpt-4o"
 
 mcp:
-  server_url: "http://localhost:3000"
-  server_type: "http"
-  server_command: null
+  enabled: true
+  type: "stdio"
+  provider: "azure-devops"
+  organization_name: "${ADO_ORG_NAME}"
+  command: "npx"
+  args:
+    - "-y"
+    - "@azure-devops/mcp@next"
+    - "${ADO_ORG_NAME}"
 
 api:
   port: 8000
