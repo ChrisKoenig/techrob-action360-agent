@@ -19,18 +19,17 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-async def main():
+def main():
     """Initialize and start the API server."""
     logger.info("Initializing TechRob Action360 Agent...")
     
-    # Create agent
+    # Create agent (don't initialize yet - it will initialize on first query)
     agent = TechRobAgent(
         project_endpoint=os.getenv("FOUNDRY_PROJECT_ENDPOINT"),
         model_deployment_name=os.getenv("MODEL_DEPLOYMENT", "gpt-4o"),
+        ado_org_name=os.getenv("ADO_ORG_NAME", "UnifiedActionTracker"),
+        ado_project_name=os.getenv("ADO_PROJECT_NAME", "Unified Action Tracker"),
     )
-    
-    # Initialize agent (creates Azure AI client)
-    await agent.initialize()
     
     # Create API
     api = AgentAPI(
@@ -42,15 +41,18 @@ async def main():
     # Start API server
     try:
         logger.info(f"Starting API server on {api.host}:{api.port}")
+        logger.info("Available endpoints:")
+        logger.info("  POST /api/query - Send a query to the agent")
+        logger.info("  POST /api/query/stream - Stream agent response (Server-Sent Events)")
+        logger.info("  GET /api/health - Health check")
+        logger.info("  GET /api/tools - List available tools")
         api.run()
     except KeyboardInterrupt:
         logger.info("Shutting down...")
-        await agent.cleanup()
     except Exception as e:
-        logger.error(f"Error starting API: {e}")
-        await agent.cleanup()
+        logger.error(f"Error starting API: {e}", exc_info=True)
         raise
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    main()

@@ -18,6 +18,7 @@ class TechRobAgent:
         project_endpoint: Optional[str] = None,
         model_deployment_name: Optional[str] = None,
         ado_org_name: Optional[str] = None,
+        ado_project_name: Optional[str] = None,
         agent_name: str = "TechRobAction360Agent",
         instructions: Optional[str] = None,
         enable_mcp: bool = True,
@@ -29,6 +30,7 @@ class TechRobAgent:
             project_endpoint: Azure AI Foundry project endpoint. Defaults to env var.
             model_deployment_name: Model deployment name. Defaults to env var.
             ado_org_name: Azure DevOps organization name. Defaults to env var.
+            ado_project_name: Azure DevOps project name. Defaults to env var.
             agent_name: Name of the agent.
             instructions: System instructions for the agent.
             enable_mcp: Whether to enable Azure DevOps MCP tools.
@@ -36,10 +38,12 @@ class TechRobAgent:
         self.project_endpoint = project_endpoint or os.getenv("FOUNDRY_PROJECT_ENDPOINT")
         self.model_deployment_name = model_deployment_name or os.getenv("MODEL_DEPLOYMENT", "gpt-4o")
         self.ado_org_name = ado_org_name or os.getenv("ADO_ORG_NAME", "UnifiedActionTracker")
+        self.ado_project_name = ado_project_name or os.getenv("ADO_PROJECT_NAME", "Unified Action Tracker")
         self.agent_name = agent_name
         self.enable_mcp = enable_mcp
         
-        default_instructions = """You are TechRob Action360, a helpful AI assistant with access to Azure DevOps tools.
+        default_instructions = f"""You are TechRob Action360, a helpful AI assistant with access to Azure DevOps tools.
+You work with the Azure DevOps organization '{self.ado_org_name}' and the project '{self.ado_project_name}'.
 You can help users manage work items, pull requests, pipelines, and team capacity.
 You have access to Azure DevOps via the MCP server, which provides tools for:
 - Creating and managing work items (tasks, bugs, features)
@@ -49,7 +53,7 @@ You have access to Azure DevOps via the MCP server, which provides tools for:
 - Repository management
 
 Always provide clear, accurate, and concise responses.
-When users ask about Azure DevOps data, use the appropriate tools to fetch real data."""
+When users ask about Azure DevOps data, use the appropriate tools to fetch real data from the '{self.ado_project_name}' project."""
         
         self.instructions = instructions or default_instructions
         self.credential = None
@@ -79,7 +83,8 @@ When users ask about Azure DevOps data, use the appropriate tools to fetch real 
                         "-y",
                         "@azure-devops/mcp@next",
                         self.ado_org_name,
-                    ]
+                    ],
+                    load_prompts=False,
                 )
             ]
             logger.info(f"Created {len(tools)} MCP tool(s)")
