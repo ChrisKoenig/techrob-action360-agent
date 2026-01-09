@@ -1,0 +1,17 @@
+# MCP Tools Configuration
+# Define the tools you want to expose from your MCP server
+
+tools:
+  # Example tool configuration
+  # - name: "get_data"
+  #   description: "Retrieve data from the data source"
+  #   input_schema:
+  #     type: "object"
+  #     properties:
+  #       query:
+  #         type: "string"
+  #         description: "Data query"
+  #       filters:
+  #         type: "object"
+  #         description: "Optional filters"
+# TODO: Update with actual MCP tools available in your server

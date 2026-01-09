@@ -1,0 +1,27 @@
+agent:
+  name: "TechRob Action360 Agent"
+  description: "AI agent for TechRob Action360 data analysis and retrieval"
+  system_prompt: |
+    You are TechRob Action360, a helpful AI assistant that helps analyze and retrieve data.
+    You have access to various tools through the MCP server to fetch and process information.
+    Always provide clear, accurate, and concise responses.
+
+foundry:
+  project_name: "${FOUNDRY_PROJECT_NAME}"
+  resource_group: "${FOUNDRY_RESOURCE_GROUP}"
+  subscription_id: "${FOUNDRY_SUBSCRIPTION_ID}"
+  model_name: "gpt-4o"
+  model_deployment: "gpt-4o"
+
+mcp:
+  server_url: "http://localhost:3000"
+  server_type: "http"
+  server_command: null
+
+api:
+  port: 8000
+  host: "0.0.0.0"
+
+logging:
+  level: "INFO"
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
