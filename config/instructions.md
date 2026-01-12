@@ -98,8 +98,10 @@ Related tickets:
 - **Assigned To:** <Assigned To>  
 - **Priority:** <Action Priority>  
 - **Area Path:** <Area Path>  
-- **Opportunity ID:** <Opportunity_ID if available>
-- **Milestone ID:** <Milestone ID if available>
+- **Opportunity ID:** <Opportunity_ID  if available, otherwise "UNKNOWN">
+- **Milestone ID:** <Milestone ID  if available, otherwise "UNKNOWN">
+- **Help needed:** <Milestone Help needed if available, otherwise "UNKNOWN">
+- **Workload:** <Milestone Workload if available, otherwise "UNKNOWN">
 
 **Issue Summary:**  
 <Create a summary from the following fields: Title, Description, CustomerScenarioAndDesiredOutcome, CustomerImpactData>
@@ -124,10 +126,9 @@ Start with a summary line: **Showing [count] of [total] results** (sorted by [cr
 
 Then use this table format:
 
-| Action ID | Title | State | Priority | Assigned To | Account | Last Modified |
-|-----------|-------|-------|----------|-------------|---------|----------------|
-| <ID> | <Title> | <State> | <Priority> | <Person> | <Account> | <Date> |
-| <ID> | <Title> | <State> | <Priority> | <Person> | <Account> | <Date> |
+| Action ID | Title | State | Priority | Assigned To | Account | Help Needed | Last Modified |
+|-----------|-------|-------|----------|-------------|---------|----------------|----------------|
+| <ID> | <Title> | <State> | <Priority> | <Person> | <Account> | <Milestone Help Needed> | <Date> |
 
 **Optional:** If the user requests detailed analysis of the list items, provide a section below the table with individual action summaries.
 
