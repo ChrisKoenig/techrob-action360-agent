@@ -20,14 +20,135 @@ Used for retrieving and summarizing Actions. Focuses on:
 ### `routing` 
 **File**: `config/instructions_routing.md`
 
-Used for analyzing Actions and providing routing recommendations. Focuses on:
-- Comprehensive situation assessment
-- Urgency, complexity, and impact evaluation
-- Routing path recommendations
-- Escalation guidance
-- Risk factor identification
+Used for analyzing Actions through a deterministic 7-phase routing engine. Focuses on:
+- **Phase 1**: Data extraction and normalization from work item
+- **Phase 2**: Requestor identity classification (CSU vs STU)
+- **Phase 3**: Service-to-solution-area mapping
+- **Phase 4**: Mutually exclusive rules (capacity, security, modern work, scheduled items)
+- **Phase 5**: Direct routing rules (Enterprise Modernization, Service Availability, Platform Development, etc.)
+- **Phase 5B**: Mandatory milestone verification
+- **Phase 6**: Non-mutually exclusive secondary rules
+- **Phase 7**: Output formatting (human-readable + JSON)
 
-**Use when**: You need to analyze an Action and determine where it should be routed (support, engineering, product, etc.).
+**Routing Output**:
+- Assigned team (e.g., "Tech RoB", "Platform Team")
+- Assigned milestone/solution area (e.g., "Service Availability", "Enterprise Modernization")
+- Service identification
+- Requestor and context information
+- Structured JSON with decision reasoning
+
+**Use when**: You need to analyze an Action and determine the optimal team/area for assignment using deterministic rules.
+
+## Usage Examples
+
+### Summary Mode: Quick Lookup
+
+```bash
+.\query.ps1 "Show action 676893"
+```
+
+Returns:
+```
+Action ID: 676893
+Title: PostgreSQL Database Connection Issue
+Status: Active
+Service: Database Infrastructure
+Requestor: Unity Technologies Engineering
+Created: 2024-01-15
+Priority: High
+```
+
+### Routing Mode: Analysis with Assignment
+
+```bash
+.\routing.ps1 676893
+```
+
+Returns:
+```
+Routing Decision: Tech RoB | Service Availability
+Requestor: Unity Technologies (engineering-team@unity.com)
+Service: PostgreSQL/Database
+Context: Production incident - critical database connectivity issue
+
+Identified Asks:
+1. Restore database connectivity  
+2. Prevent future outages
+3. Implement monitoring
+
+Routing Rationale:
+- Service maps to Platform/Service Availability
+- Severity indicates immediate Team RoB assignment
+- Database expertise required in service area
+
+{Complete JSON output with all phase results}
+```
+
+### Python: Dynamic Switching
+
+```python
+import asyncio
+from src.agent import TechRobAgent
+
+async def analyze_and_route():
+    agent = TechRobAgent(instruction_type="summary")
+    await agent.initialize()
+    
+    # Get summary
+    print("=== SUMMARY ===")
+    summary = await agent.process_query("Show action 676893")
+    print(summary)
+    
+    # Switch to routing
+    print("\n=== ROUTING ANALYSIS ===")
+    agent.set_instruction_type("routing")
+    routing = await agent.process_query("Analyze action 676893 for routing")
+    print(routing)
+    
+    await agent.cleanup()
+
+asyncio.run(analyze_and_route())
+```
+
+### REST API: Routing with Streaming
+
+```bash
+curl -X POST http://localhost:8000/api/query/stream \
+  -H "Content-Type: application/json" \
+  -d '{
+    "query": "Analyze action 676893 and provide routing recommendation",
+    "instruction_type": "routing"
+  }'
+```
+
+This returns chunked Server-Sent Events for real-time display of routing analysis.
+
+## REST API Support
+
+The REST API fully supports instruction types:
+
+```powershell
+# Summary mode (default if not specified)
+curl -X POST http://localhost:8000/api/query `
+  -H "Content-Type: application/json" `
+  -d '{"query": "Show me action 12345"}'
+
+# Routing mode
+curl -X POST http://localhost:8000/api/query `
+  -H "Content-Type: application/json" `
+  -d '{
+    "query": "Analyze action 12345 for routing",
+    "instruction_type": "routing"
+  }'
+
+# Streaming (real-time output)
+curl -X POST http://localhost:8000/api/query/stream `
+  -H "Content-Type: application/json" `
+  -d '{
+    "query": "Analyze action 12345 for routing",
+    "instruction_type": "routing"
+  }'
+```
 
 ## Usage Patterns
 
@@ -37,23 +158,18 @@ Used for analyzing Actions and providing routing recommendations. Focuses on:
 from src.agent import TechRobAgent
 
 # Create agent in routing mode
-agent = TechRobAgent(
-    project_endpoint="https://<region>.api.azureml.ms",
-    model_deployment_name="gpt-4o",
-    instruction_type="routing"  # Specify instruction type
-)
+agent = TechRobAgent(instruction_type="routing")
+await agent.initialize()
 
-response = await agent.process_query("Analyze action 12345 for routing")
+response = await agent.process_query("Analyze action 676893 for routing")
 ```
 
 ### Pattern 2: Default Mode (Summary)
 
 ```python
 # If you don't specify instruction_type, it defaults to "summary"
-agent = TechRobAgent(
-    project_endpoint="https://<region>.api.azureml.ms",
-    model_deployment_name="gpt-4o"
-)
+agent = TechRobAgent()
+await agent.initialize()
 
 response = await agent.process_query("Show me action 12345")
 ```
@@ -61,45 +177,37 @@ response = await agent.process_query("Show me action 12345")
 ### Pattern 3: Dynamic Switching
 
 ```python
-agent = TechRobAgent(
-    project_endpoint="https://<region>.api.azureml.ms",
-    model_deployment_name="gpt-4o",
-    instruction_type="summary"
-)
+agent = TechRobAgent(instruction_type="summary")
+await agent.initialize()
 
 # Get summary
-summary = await agent.process_query("Show me action 12345")
+summary = await agent.process_query("Show action 676893")
 
 # Switch to routing mode
 agent.set_instruction_type("routing")
 
 # Get routing recommendation for the same action
-routing = await agent.process_query("Now analyze this action for routing")
+routing = await agent.process_query("Analyze this action for routing")
 
 # Switch back
 agent.set_instruction_type("summary")
 ```
 
-## REST API Support
+## Query Patterns by Instruction Type
 
-When using the REST API, you can specify the instruction type in your request:
+### Summary Mode Queries
+- "Show action 12345"
+- "What is action 676893?"
+- "List the details of work item 54321"
+- "Get information about action 111222"
+- "Summarize action 999888"
 
-```powershell
-# Summary mode (default)
-curl -X POST http://localhost:8000/api/query `
-  -H "Content-Type: application/json" `
-  -d '{"query": "Show me action 12345"}'
-
-# Routing mode (if your API supports it)
-curl -X POST http://localhost:8000/api/query `
-  -H "Content-Type: application/json" `
-  -d '{
-    "query": "Analyze action 12345 for routing",
-    "instruction_type": "routing"
-  }'
-```
-
-> **Note**: REST API support for instruction_type requires updating `src/api.py`. See the section below.
+### Routing Mode Queries
+- "Analyze action 676893 for routing"
+- "Where should action 54321 be routed?"
+- "Determine the routing decision for action 12345"
+- "Provide routing recommendation for work item 111"
+- "Route action 676893"
 
 ## Extending with Custom Instructions
 
