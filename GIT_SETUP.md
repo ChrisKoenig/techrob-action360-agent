@@ -1,4 +1,4 @@
-# Git Setup Guide
+# Git Setup Guide v2
 
 Your local repository is initialized and ready! Here's how to connect it to a remote repository.
 
