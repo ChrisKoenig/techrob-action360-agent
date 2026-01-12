@@ -4,6 +4,7 @@
 import asyncio
 import logging
 import os
+from pathlib import Path
 from dotenv import load_dotenv
 from src.agent import TechRobAgent
 from src.api import AgentAPI
@@ -11,17 +12,49 @@ from src.api import AgentAPI
 # Load environment variables
 load_dotenv()
 
-# Configure logging
-logging.basicConfig(
-    level=os.getenv("LOG_LEVEL", "INFO"),
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
+# Create logs directory if it doesn't exist
+log_dir = Path("logs")
+log_dir.mkdir(exist_ok=True)
+log_file = log_dir / "agent.log"
+
+# Clear the log file at startup (truncate, don't append)
+log_file.touch(exist_ok=True)
+with open(log_file, 'w') as f:
+    f.write("")
+
+# Configure logging with both console and file handlers
+log_level = os.getenv("LOG_LEVEL", "INFO")
+log_format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+
+# Root logger
+root_logger = logging.getLogger()
+root_logger.setLevel(log_level)
+
+# Console handler
+console_handler = logging.StreamHandler()
+console_handler.setLevel(log_level)
+console_formatter = logging.Formatter(log_format)
+console_handler.setFormatter(console_formatter)
+root_logger.addHandler(console_handler)
+
+# File handler (append mode - ok now since we cleared it)
+file_handler = logging.FileHandler(log_file)
+file_handler.setLevel(log_level)
+file_formatter = logging.Formatter(log_format)
+file_handler.setFormatter(file_formatter)
+root_logger.addHandler(file_handler)
+
 logger = logging.getLogger(__name__)
+
+# Set agent logger to INFO level to see instruction changes
+agent_logger = logging.getLogger("src.agent")
+agent_logger.setLevel(logging.INFO)
 
 
 def main():
     """Initialize and start the API server."""
     logger.info("Initializing TechRob Action360 Agent...")
+    logger.info(f"[LOG] Logging to file: {log_file.absolute()}")
     
     # Create agent (don't initialize yet - it will initialize on first query)
     agent = TechRobAgent(
