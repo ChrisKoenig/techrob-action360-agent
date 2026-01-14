@@ -18,33 +18,61 @@ Complete these steps in order to deploy your API to Azure Container Instances.
 
 ---
 
-## ✅ STEP 2: Create Azure Service Principal (5 min)
+## ✅ STEP 2: Create Azure Service Principal (10 min)
 
-Run this command in PowerShell:
+**Use Azure Portal (CLI may be blocked by policy on your tenant):**
 
-```powershell
-$subscription = "f23858ca-331b-4f31-89c1-e2ffa9e5c17c"
+### Part A: Create App Registration
 
-$sp = az ad sp create-for-rbac `
-  --name techrob-action360-github `
-  --role Contributor `
-  --scopes /subscriptions/$subscription
+1. [ ] Go to: https://portal.azure.com
+2. [ ] Search for: "App registrations"
+3. [ ] Click: **New registration**
+4. [ ] Name: `techrob-action360-github`
+5. [ ] Click: **Register**
+6. [ ] **Copy and save:** Application (client) ID
+7. [ ] Go to: **Certificates & secrets**
+8. [ ] Click: **New client secret**
+9. [ ] Description: `GitHub Actions`
+10. [ ] Expiration: **6 months** (or your preference)
+11. [ ] Click: **Add**
+12. [ ] **Copy and save:** The secret VALUE (⚠️ won't show again!)
 
-# Display as JSON (what GitHub needs)
-$spJson = @{
-    clientId = $sp.appId
-    clientSecret = $sp.password
-    subscriptionId = $subscription
-    tenantId = $sp.tenant
-} | ConvertTo-Json
+### Part B: Assign Role to Subscription
 
-Write-Host $spJson
+1. [ ] Go to: https://portal.azure.com
+2. [ ] Search for: "Subscriptions"
+3. [ ] Click: `f23858ca-331b-4f31-89c1-e2ffa9e5c17c`
+4. [ ] Click: **Access control (IAM)** (left sidebar)
+5. [ ] Click: **+ Add > Add role assignment**
+6. [ ] Role: **Contributor**
+7. [ ] Assign to: **User, group, or service principal**
+8. [ ] Select: `techrob-action360-github` (search for it)
+9. [ ] Click: **Review + assign**
+
+### Part C: Get Tenant ID
+
+1. [ ] Go to: https://portal.azure.com
+2. [ ] Search for: "Azure Active Directory"
+3. [ ] Click: **Properties**
+4. [ ] **Copy and save:** Directory (tenant) ID
+
+### Part D: Create JSON for GitHub
+
+Now you have all the pieces. Create this JSON (replace with your values):
+
+```json
+{
+  "clientId": "<application-id-from-step-6>",
+  "clientSecret": "<secret-value-from-step-12>",
+  "subscriptionId": "f23858ca-331b-4f31-89c1-e2ffa9e5c17c",
+  "tenantId": "<tenant-id-from-step-4>"
+}
 ```
 
 **What to do with the output:**
-- [ ] Copy the entire JSON output
-- [ ] Don't share it with anyone
-- [ ] You'll paste it in GitHub in the next step
+- [ ] Copy the entire JSON
+- [ ] Keep it secure (don't share)
+- [ ] You'll paste it in GitHub Step 3 as `AZURE_CREDENTIALS`
 
 ---
 
