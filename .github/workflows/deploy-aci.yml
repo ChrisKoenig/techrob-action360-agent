@@ -1,0 +1,79 @@
+name: Deploy to Azure Container Instances
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ secrets.DOCKER_USERNAME }}/techrob-action360:latest
+            ${{ secrets.DOCKER_USERNAME }}/techrob-action360:${{ github.sha }}
+          cache-from: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/techrob-action360:buildcache
+          cache-to: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/techrob-action360:buildcache,mode=max
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Deploy to Azure Container Instances
+        uses: azure/CLI@v2
+        with:
+          azcliversion: latest
+          inlineScript: |
+            az container create \
+              --resource-group rg-techrob-action360 \
+              --name techrob-action360-api \
+              --image ${{ secrets.DOCKER_USERNAME }}/techrob-action360:latest \
+              --cpu 1 \
+              --memory 1.5 \
+              --ports 8000 \
+              --environment-variables \
+                FOUNDRY_PROJECT_ENDPOINT='${{ secrets.FOUNDRY_PROJECT_ENDPOINT }}' \
+                FOUNDRY_PROJECT_NAME='${{ secrets.FOUNDRY_PROJECT_NAME }}' \
+                FOUNDRY_RESOURCE_GROUP='${{ secrets.FOUNDRY_RESOURCE_GROUP }}' \
+                FOUNDRY_SUBSCRIPTION_ID='${{ secrets.FOUNDRY_SUBSCRIPTION_ID }}' \
+                MODEL_DEPLOYMENT='gpt-4o' \
+                ADO_ORG_NAME='UnifiedActionTracker' \
+                ADO_PROJECT_NAME='Unified Action Tracker' \
+                API_PORT='8000' \
+                LOG_LEVEL='INFO' \
+              --protocol TCP \
+              --dns-name-label techrob-action360-api \
+              --restart-policy OnFailure
+
+      - name: Get Container URL
+        uses: azure/CLI@v2
+        with:
+          azcliversion: latest
+          inlineScript: |
+            FQDN=$(az container show --resource-group rg-techrob-action360 --name techrob-action360-api --query ipAddress.fqdn -o tsv)
+            echo "API_URL=http://$FQDN:8000" >> $GITHUB_ENV
+            echo "✅ API deployed at: http://$FQDN:8000"
+
+      - name: Test API Health
+        run: |
+          sleep 10
+          curl -f http://${{ env.API_URL }}/api/health || echo "⏳ Container still starting..."
