@@ -3,19 +3,16 @@ FROM python:3.11
 WORKDIR /app
 
 # Install system dependencies
-RUN apt-get update && apt-get install -y \
-    git \
-    curl \
-    && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
 
-# Upgrade pip
-RUN pip install --upgrade pip
-
-# Clone the repository
-RUN git clone https://github.com/ChrisKoenig/techrob-action360-agent.git .
+# Copy requirements first (for better caching)
+COPY requirements.txt .
 
 # Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy entire application
+COPY . .
 
 # Expose port 8000
 EXPOSE 8000
