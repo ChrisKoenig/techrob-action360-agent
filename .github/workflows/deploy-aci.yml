@@ -47,6 +47,9 @@ jobs:
               --resource-group rg-techrob-action360 \
               --name techrob-action360-api \
               --image ${{ secrets.DOCKER_USERNAME }}/techrob-action360:latest \
+              --registry-login-server docker.io \
+              --registry-username ${{ secrets.DOCKER_USERNAME }} \
+              --registry-password ${{ secrets.DOCKER_PASSWORD }} \
               --os-type Linux \
               --cpu 1 \
               --memory 1.5 \
